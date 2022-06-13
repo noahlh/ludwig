@@ -372,7 +372,7 @@ class RayTrainerV2(BaseTrainer):
         if test_set is not None:
             dataset["test"] = test_set.pipeline(shuffle=False, **self.data_loader_kwargs)
 
-        dataset_size_bytes = max(training_set.size_bytes, validation_set.size_bytes, test_set.size_bytes)
+        dataset_size_bytes = max(x.size_bytes for x in [training_set, validation_set, test_set] if x is not None)
         with self.create_runner(dataset_size_bytes=dataset_size_bytes) as runner:
             results, self._validation_field, self._validation_metric = runner.run(
                 lambda config: train_fn(**config),
