@@ -17,6 +17,7 @@
 import contextlib
 import copy
 import logging
+import math
 from distutils.version import LooseVersion
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -79,19 +80,36 @@ def get_horovod_kwargs(use_gpu=None):
     )
 
 
-def get_trainer_kwargs(use_gpu=None):
+def get_trainer_defaults(dataset_size_bytes: Optional[int] = None):
     # Our goal is to have a worker per resource used for training.
     # The priority is GPUs, but can fall back to CPUs if there are no
     # GPUs available.
-    if use_gpu is None:
-        use_gpu = int(ray.cluster_resources().get("GPU", 0)) > 0
+    #
+    # Note that this check may not give the desired result if the underlying Ray cluster *could* have GPU workers, but
+    # none are currently active. In that case, we rely on the user to enable the GPU flag manually.
+    available_gpus = int(ray.cluster_resources().get("GPU", 0))
+    use_gpu = available_gpus > 0
 
-    if use_gpu:
-        num_workers = int(ray.cluster_resources().get("GPU", 0))
-    else:
-        # TODO: use placement groups or otherwise spread across nodes
-        node_resources = [node["Resources"] for node in ray.state.nodes()]
-        num_workers = len(node_resources)
+    num_workers = None
+
+    # Determine the number of workers based on dataset size, doubling at each order of magnitude (<1GB, 1GB, 10GB, etc.)
+    # Assumes that the underlying Ray cluster will scale up accordingly.
+    if dataset_size_bytes is not None:
+        size_in_gb = dataset_size_bytes // (1024 * 1024 * 1024)
+        if size_in_gb < 1:
+            num_workers = 1
+        else:
+            num_workers = 2 ^ (math.floor(math.log10(size_in_gb)) + 1)
+
+    # If we weren't able to determine a worker count via dataset size, do so based on the known (static, possibly stale)
+    # capacity of the Ray cluster.
+    if num_workers is None:
+        if use_gpu:
+            num_workers = available_gpus
+        else:
+            # TODO: use placement groups or otherwise spread across nodes
+            node_resources = [node["Resources"] for node in ray.state.nodes()]
+            num_workers = len(node_resources)
 
     return dict(
         # TODO travis: replace backend here once ray 1.8 released
@@ -325,8 +343,8 @@ class RayTrainerV2(BaseTrainer):
         self._validation_metric = None
 
     @contextlib.contextmanager
-    def create_runner(self):
-        trainer = Trainer(**{**get_trainer_kwargs(), **self.trainer_kwargs})
+    def create_runner(self, dataset_size_bytes: Optional[int] = None):
+        trainer = Trainer(**{**get_trainer_defaults(dataset_size_bytes), **self.trainer_kwargs})
         trainer.start()
         try:
             yield trainer
@@ -354,7 +372,8 @@ class RayTrainerV2(BaseTrainer):
         if test_set is not None:
             dataset["test"] = test_set.pipeline(shuffle=False, **self.data_loader_kwargs)
 
-        with self.create_runner() as runner:
+        dataset_size_bytes = max(training_set.size_bytes, validation_set.size_bytes, test_set.size_bytes)
+        with self.create_runner(dataset_size_bytes=dataset_size_bytes) as runner:
             results, self._validation_field, self._validation_metric = runner.run(
                 lambda config: train_fn(**config),
                 config={"executable_kwargs": executable_kwargs, "model_ref": ray.put(self.model), **kwargs},
@@ -381,7 +400,9 @@ class RayTrainerV2(BaseTrainer):
         **kwargs,
     ) -> int:
         return ray.get(
-            tune_batch_size_fn.options(num_cpus=self.num_cpus, num_gpus=self.num_gpus).remote(
+            tune_batch_size_fn.options(
+                num_cpus=self.num_cpus(training_set.size_bytes), num_gpus=self.num_gpus(training_set.size_bytes)
+            ).remote(
                 dataset=training_set,
                 data_loader_kwargs=self.data_loader_kwargs,
                 executable_kwargs=self.executable_kwargs,
@@ -395,7 +416,9 @@ class RayTrainerV2(BaseTrainer):
 
     def tune_learning_rate(self, config, training_set: RayDataset, **kwargs) -> float:
         return ray.get(
-            tune_learning_rate_fn.options(num_cpus=self.num_cpus, num_gpus=self.num_gpus).remote(
+            tune_learning_rate_fn.options(
+                num_cpus=self.num_cpus(training_set.size_bytes), num_gpus=self.num_gpus(training_set.size_bytes)
+            ).remote(
                 dataset=training_set,
                 config=config,
                 data_loader_kwargs=self.data_loader_kwargs,
@@ -435,18 +458,15 @@ class RayTrainerV2(BaseTrainer):
     def eval_batch_size(self, value: int):
         self.config.eval_batch_size = value
 
-    @property
-    def resources_per_worker(self) -> Dict[str, Any]:
-        trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
+    def resources_per_worker(self, dataset_size_bytes: Optional[int] = None) -> Dict[str, Any]:
+        trainer_kwargs = {**get_trainer_defaults(), **self.trainer_kwargs}
         return trainer_kwargs.get("resources_per_worker", {})
 
-    @property
-    def num_cpus(self) -> int:
-        return self.resources_per_worker.get("CPU", 1)
+    def num_cpus(self, dataset_size_bytes: Optional[int] = None) -> int:
+        return self.resources_per_worker(dataset_size_bytes).get("CPU", 1)
 
-    @property
-    def num_gpus(self) -> int:
-        return self.resources_per_worker.get("GPU", 0)
+    def num_gpus(self, dataset_size_bytes: Optional[int] = None) -> int:
+        return self.resources_per_worker(dataset_size_bytes).get("GPU", 0)
 
     def set_base_learning_rate(self, learning_rate: float):
         self.config.learning_rate = learning_rate
@@ -598,10 +618,10 @@ class RayPredictor(BasePredictor):
         self.df_engine = df_engine
 
     def get_trainer_kwargs(self) -> Dict[str, Any]:
-        return {**self.trainer_kwargs, **get_trainer_kwargs()}
+        return {**self.trainer_kwargs, **get_trainer_defaults()}
 
     def get_resources_per_worker(self) -> Tuple[int, int]:
-        trainer_kwargs = {**self.trainer_kwargs, **get_trainer_kwargs()}
+        trainer_kwargs = {**self.trainer_kwargs, **get_trainer_defaults()}
         resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
         num_gpus = resources_per_worker.get("GPU", 0)
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
@@ -657,7 +677,7 @@ class RayPredictor(BasePredictor):
         # communication ops. However, Horovod is not suitable for transforming one big dataset to another. For that
         # we will use Ray Datasets. Therefore, we break this up into two separate steps, and two passes over the
         # dataset. In the future, we can explore ways to combine these into a single step to reduce IO.
-        runner = Trainer(**{**get_trainer_kwargs(), **self.trainer_kwargs})
+        runner = Trainer(**{**get_trainer_defaults(dataset_size_bytes=dataset.size_bytes), **self.trainer_kwargs})
         runner.start()
         try:
             # Collect eval metrics by distributing work across nodes / gpus with Horovod

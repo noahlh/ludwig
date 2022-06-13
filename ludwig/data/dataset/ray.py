@@ -117,6 +117,10 @@ class RayDataset(Dataset):
     def size(self):
         return len(self)
 
+    @property
+    def size_bytes(self) -> Optional[int]:
+        return self.ds.size_bytes()
+
     def to_df(self):
         return self.df_engine.from_ray_dataset(self.ds)
 

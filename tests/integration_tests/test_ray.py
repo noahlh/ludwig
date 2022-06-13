@@ -48,7 +48,7 @@ from tests.integration_tests.utils import (
 try:
     import ray
 
-    from ludwig.backend.ray import get_trainer_kwargs, RayBackend
+    from ludwig.backend.ray import get_trainer_defaults, RayBackend
     from ludwig.data.dataframe.dask import DaskEngine
 
     @ray.remote(num_cpus=1, num_gpus=1)
@@ -98,7 +98,7 @@ def ray_start(num_cpus=2, num_gpus=None):
 
 def run_api_experiment(config, dataset, backend_config, skip_save_processed_input=True):
     # Sanity check that we get 4 slots over 1 host
-    kwargs = get_trainer_kwargs()
+    kwargs = get_trainer_defaults()
     if torch.cuda.device_count() > 0:
         assert kwargs.get("num_workers") == torch.cuda.device_count(), kwargs
         assert kwargs.get("use_gpu"), kwargs
