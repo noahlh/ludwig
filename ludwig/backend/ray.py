@@ -677,7 +677,7 @@ class RayPredictor(BasePredictor):
         # communication ops. However, Horovod is not suitable for transforming one big dataset to another. For that
         # we will use Ray Datasets. Therefore, we break this up into two separate steps, and two passes over the
         # dataset. In the future, we can explore ways to combine these into a single step to reduce IO.
-        runner = Trainer(**{**get_trainer_defaults(dataset_size_bytes=dataset.size_bytes), **self.trainer_kwargs})
+        runner = Trainer(**{**get_trainer_defaults(), **self.trainer_kwargs})
         runner.start()
         try:
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
