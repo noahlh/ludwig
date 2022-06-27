@@ -1,6 +1,6 @@
 from dataclasses import field
 from typing import Dict as tDict
-from typing import List as tList
+from typing import List as TList
 from typing import Tuple, Type, Union
 
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
@@ -105,7 +105,7 @@ def String(default: Union[None, str] = None, allow_none: bool = True, pattern: s
     )
 
 
-def StringOptions(options: tList[str], default: Union[None, str] = None, allow_none: bool = True, description=""):
+def StringOptions(options: TList[str], default: Union[None, str] = None, allow_none: bool = True, description=""):
     """Returns a dataclass field with marshmallow metadata that enforces string inputs must be one of `options`.
 
     By default, None is allowed (and automatically appended) to the allowed list of options.
@@ -329,7 +329,7 @@ def Dict(default: Union[None, tDict] = None, description=""):
     )
 
 
-def DictList(default: Union[None, tList[tDict]] = None, description=""):
+def DictList(default: Union[None, TList[tDict]] = None, description=""):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
     if default is not None:
         try:
@@ -525,7 +525,7 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
 
 
 def IntegerOrStringOptionsField(
-    options: tList[str],
+    options: TList[str],
     allow_none: bool,
     default: Union[None, int],
     default_numeric: Union[None, int],
@@ -543,7 +543,7 @@ def IntegerOrStringOptionsField(
 
 
 def NumericOrStringOptionsField(
-    options: tList[str],
+    options: TList[str],
     allow_none: bool,
     default: Union[None, int, float, str],
     default_numeric: Union[None, int, float],
