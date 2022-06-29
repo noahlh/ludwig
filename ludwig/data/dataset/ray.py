@@ -25,6 +25,7 @@ import pandas as pd
 import ray
 from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
+from ray.data import Dataset as RDataset
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
@@ -149,14 +150,26 @@ class RayDatasetManager(DatasetManager):
 class RayDatasetShard(Dataset):
     def __init__(
         self,
-        dataset_shard: DatasetPipeline,
+        dataset_shard: RDataset,
+        dataset_shard_cls: RayDataset,
         features: Dict[str, Dict],
         training_set_metadata: Dict[str, Any],
+        data_loader_kwargs: Dict[str, Any],
     ):
         self.dataset_shard = dataset_shard
         self.features = features
         self.training_set_metadata = training_set_metadata
-        self.dataset_iter = dataset_shard.iter_datasets()
+        self.set_dataset_iter(data_loader_kwargs, dataset_shard_cls)
+
+    def set_dataset_iter(self, data_loader_kwargs: Dict[str, Any], dataset_shard_cls: RayDataset):
+        if data_loader_kwargs:
+            self.dataset_iter = dataset_shard_cls.pipeline(
+                shuffle=data_loader_kwargs.get("shuffle", True),
+                fully_executed=data_loader_kwargs.get("fully_executed", True),
+                window_size_bytes=data_loader_kwargs.get("window_size_bytes", None),
+            ).iter_datasets()
+        else:
+            self.dataset_iter = dataset_shard_cls.pipeline(shuffle=True, fully_executed=True, window_size_bytes=None)
 
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
@@ -171,7 +184,8 @@ class RayDatasetShard(Dataset):
     @lru_cache(1)
     def __len__(self):
         # TODO(travis): find way to avoid calling this, as it's expensive
-        return next(self.dataset_iter).count()
+        # return next(self.dataset_iter).count()
+        return self.dataset_shard.count()
 
     @property
     def size(self):
