@@ -182,7 +182,7 @@ def train_fn(
                 dataset_cls.get("val"),
                 features,
                 training_set_metadata,
-                data_loader_kwargs.update({"shuffle": True}),
+                data_loader_kwargs.update({"shuffle": False}),
             )
 
         try:
@@ -196,7 +196,7 @@ def train_fn(
                 dataset_cls.get("test"),
                 features,
                 training_set_metadata,
-                data_loader_kwargs.update({"shuffle": True}),
+                data_loader_kwargs.update({"shuffle": False}),
             )
 
         model = ray.get(model_ref)
@@ -602,8 +602,10 @@ class RayLegacyTrainer(BaseTrainer):
 
 
 def eval_fn(
+    dataset_cls: Dict[str, RayDataset],
     predictor_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
+    data_loader_kwargs: Dict[str, Any] = None,
     training_set_metadata: Dict[str, Any] = None,
     features: Dict[str, Dict] = None,
     **kwargs,
@@ -615,8 +617,10 @@ def eval_fn(
 
         eval_shard = RayDatasetShard(
             rt.get_dataset_shard("eval"),
+            dataset_cls.get("eval"),
             features,
             training_set_metadata,
+            data_loader_kwargs.update({"shuffle": False}),
         )
 
         model = ray.get(model_ref)
@@ -713,7 +717,11 @@ class RayPredictor(BasePredictor):
         runner.start()
         try:
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
-            datasets = {"eval": dataset.pipeline(shuffle=False, **self.data_loader_kwargs)}
+            # datasets = {"eval": dataset.pipeline(shuffle=False, **self.data_loader_kwargs)}
+
+            datasets = {"eval": dataset.ds}
+            dataset_cls = {"eval": dataset}
+
             predictor_kwargs = {
                 **self.predictor_kwargs,
                 "collect_predictions": False,
@@ -723,6 +731,8 @@ class RayPredictor(BasePredictor):
                 config={
                     "predictor_kwargs": predictor_kwargs,
                     "model_ref": ray.put(self.model),
+                    "data_loader_kwargs": self.data_loader_kwargs,
+                    "dataset_cls": dataset_cls,
                     "training_set_metadata": dataset.training_set_metadata,
                     "features": dataset.features,
                     **kwargs,
