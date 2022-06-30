@@ -236,12 +236,8 @@ def tune_batch_size_fn(
     try:
         initialize_pytorch(horovod=hvd)
 
-        pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
-        train_shard = RayDatasetShard(
-            pipe,
-            features,
-            training_set_metadata,
-        )
+        # pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
+        train_shard = RayDatasetShard(dataset.ds, dataset, features, training_set_metadata, data_loader_kwargs)
 
         device = get_torch_device()
         model = model.to(device)
@@ -269,12 +265,8 @@ def tune_learning_rate_fn(
     try:
         initialize_pytorch(horovod=hvd)
 
-        pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
-        train_shard = RayDatasetShard(
-            pipe,
-            features,
-            training_set_metadata,
-        )
+        # pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
+        train_shard = RayDatasetShard(dataset.ds, dataset, features, training_set_metadata, data_loader_kwargs)
 
         device = get_torch_device()
         model = model.to(device)

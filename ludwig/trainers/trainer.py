@@ -754,6 +754,7 @@ class Trainer(BaseTrainer):
                 seed=self.random_seed,
                 horovod=self.horovod,
             ) as batcher:
+                print("Training initialized batcher")
                 # ================ Training Loop ================
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
 
@@ -789,6 +790,8 @@ class Trainer(BaseTrainer):
                 progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
                 while progress_tracker.steps < self.total_steps:
+                    print("Progress Tracker Steps: ", progress_tracker.steps)
+                    print("Progress Tracker Epochs: ", progress_tracker.epoch)
                     # note that batch size may change over epochs
                     batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
 
@@ -825,6 +828,7 @@ class Trainer(BaseTrainer):
                     # ================ Post Training Epoch ================
                     progress_tracker.epoch += 1
                     print("Epoch updated: ", progress_tracker.epoch)
+
                     self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
                     if self.is_coordinator():

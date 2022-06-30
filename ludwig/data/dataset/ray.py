@@ -102,6 +102,7 @@ class RayDataset(Dataset):
 
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
+        print("Batcher initialization: ", batch_size, self.size)
         yield RayDatasetBatcher(
             self.ds.repeat().iter_datasets(),
             self.features,
