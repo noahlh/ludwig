@@ -25,7 +25,6 @@ import pandas as pd
 import ray
 from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
-from ray.data import Dataset as RDataset
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
@@ -66,49 +65,15 @@ class RayDataset(Dataset):
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
 
-        # TODO ray 1.8: convert to Tensors before shuffle
-        # def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
-        #     for c in features.keys():
-        #         df[c] = df[c].astype(TensorDtype())
-        #     return df
-        # self.ds = self.ds.map_batches(to_tensors, batch_format="pandas")
-
-    def pipeline(
-        self, shuffle: bool = True, fully_executed: bool = True, window_size_bytes: Optional[int] = None
-    ) -> DatasetPipeline:
-        """
-        Args:
-            shuffle: If true, the entire dataset is shuffled in memory before batching.
-            fully_executed: If true, force full evaluation of the Ray Dataset by loading all blocks into memory.
-            window_size_bytes: If not None, windowing is enabled and this parameter specifies the window size in bytes
-                    for the dataset.
-        """
-        if fully_executed:
-            if _ray113:
-                # Workaround for: https://github.com/ray-project/ray/issues/25643
-                # TODO(travis): remove after 1.13.1
-                self.ds = self.ds.map_batches(lambda x: x, batch_size=None)
-
-            # set instance state so calls to __len__ will also use the fully_executed version
-            self.ds = self.ds.fully_executed()
-
-        if window_size_bytes is None:
-            pipe = self.ds.repeat()
-        else:
-            pipe = self.ds.window(bytes_per_window=window_size_bytes).repeat()
-        if shuffle:
-            pipe = pipe.random_shuffle_each_window()
-        return pipe
-
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
-        print("Batcher initialization: ", batch_size, self.size)
         yield RayDatasetBatcher(
             self.ds.repeat().iter_datasets(),
             self.features,
             self.training_set_metadata,
             batch_size,
             self.size,
+            None,
         )
 
     def __len__(self):
@@ -151,8 +116,7 @@ class RayDatasetManager(DatasetManager):
 class RayDatasetShard(Dataset):
     def __init__(
         self,
-        dataset_shard: RDataset,
-        dataset_shard_cls: RayDataset,
+        dataset_shard: ray.data.Dataset,
         features: Dict[str, Dict],
         training_set_metadata: Dict[str, Any],
         data_loader_kwargs: Dict[str, Any],
@@ -160,28 +124,17 @@ class RayDatasetShard(Dataset):
         self.dataset_shard = dataset_shard
         self.features = features
         self.training_set_metadata = training_set_metadata
-        self.set_dataset_iter(data_loader_kwargs, dataset_shard_cls)
-
-    def set_dataset_iter(self, data_loader_kwargs: Dict[str, Any], dataset_shard_cls: RayDataset):
-        if data_loader_kwargs:
-            self.dataset_iter = dataset_shard_cls.pipeline(
-                shuffle=data_loader_kwargs.get("shuffle", True),
-                fully_executed=data_loader_kwargs.get("fully_executed", True),
-                window_size_bytes=data_loader_kwargs.get("window_size_bytes", None),
-            ).iter_datasets()
-        else:
-            self.dataset_iter = dataset_shard_cls.pipeline(
-                shuffle=True, fully_executed=True, window_size_bytes=None
-            ).iter_datasets()
+        self.data_loader_kwargs = data_loader_kwargs
 
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
         yield RayDatasetBatcher(
-            self.dataset_iter,
+            self.dataset_shard,
             self.features,
             self.training_set_metadata,
             batch_size,
             self.size,
+            self.data_loader_kwargs,
         )
 
     @lru_cache(1)
@@ -198,16 +151,18 @@ class RayDatasetShard(Dataset):
 class RayDatasetBatcher(Batcher):
     def __init__(
         self,
-        dataset_epoch_iterator: Iterator[ray.data.Dataset],
+        dataset_shard: Iterator[ray.data.Dataset],
         features: Dict[str, Dict],
         training_set_metadata: Dict[str, Any],
         batch_size: int,
         samples_per_epoch: int,
+        data_loader_kwargs: Dict[str, Any],
     ):
-        self.dataset_epoch_iterator = dataset_epoch_iterator
+        self.dataset_shard = dataset_shard
         self.batch_size = batch_size
         self.samples_per_epoch = samples_per_epoch
         self.training_set_metadata = training_set_metadata
+        self.data_loader_kwargs = data_loader_kwargs
 
         self.features = features
         self.columns = list(features.keys())
@@ -221,7 +176,47 @@ class RayDatasetBatcher(Batcher):
         self._next_batch = None
         self._last_batch = False
         self._step = 0
+
+        self.dataset_epoch_iterator = self.set_dataset_epoch_iter()
+
         self._fetch_next_epoch()
+
+    def _pipeline(
+        self, shuffle: bool = True, fully_executed: bool = True, window_size_bytes: Optional[int] = None
+    ) -> DatasetPipeline:
+        """
+        Args:
+            shuffle: If true, the entire dataset is shuffled in memory before batching.
+            fully_executed: If true, force full evaluation of the Ray Dataset by loading all blocks into memory.
+            window_size_bytes: If not None, windowing is enabled and this parameter specifies the window size in bytes
+                    for the dataset.
+        """
+        if fully_executed:
+            if _ray113:
+                # Workaround for: https://github.com/ray-project/ray/issues/25643
+                # TODO(travis): remove after 1.13.1
+                self.dataset_shard = self.dataset_shard.map_batches(lambda x: x, batch_size=None)
+
+            # set instance state so calls to __len__ will also use the fully_executed version
+            self.dataset_shard = self.dataset_shard.fully_executed()
+
+        if window_size_bytes is None:
+            pipe = self.dataset_shard.repeat()
+        else:
+            pipe = self.dataset_shard.window(bytes_per_window=window_size_bytes).repeat()
+        if shuffle:
+            pipe = pipe.random_shuffle_each_window()
+        return pipe
+
+    def set_dataset_epoch_iter(self):
+        if self.data_loader_kwargs:
+            return self._pipeline(
+                shuffle=self.data_loader_kwargs.get("shuffle", True),
+                fully_executed=self.data_loader_kwargs.get("fully_executed", True),
+                window_size_bytes=self.data_loader_kwargs.get("window_size_bytes", None),
+            ).iter_datasets()
+        else:
+            return self._pipeline(shuffle=True, fully_executed=True, window_size_bytes=None).iter_datasets()
 
     def next_batch(self):
         if self.last_batch():

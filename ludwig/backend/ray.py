@@ -154,7 +154,6 @@ def _get_df_engine(processor):
 
 
 def train_fn(
-    dataset_cls: Dict[str, RayDataset],
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
     data_loader_kwargs: Dict[str, Any] = None,
@@ -168,7 +167,7 @@ def train_fn(
         initialize_pytorch(horovod=hvd)
 
         train_shard = RayDatasetShard(
-            rt.get_dataset_shard("train"), dataset_cls.get("train"), features, training_set_metadata, data_loader_kwargs
+            rt.get_dataset_shard("train"), features, training_set_metadata, data_loader_kwargs
         )
 
         try:
@@ -179,7 +178,6 @@ def train_fn(
         if val_shard is not None:
             val_shard = RayDatasetShard(
                 val_shard,
-                dataset_cls.get("val"),
                 features,
                 training_set_metadata,
                 data_loader_kwargs.update({"shuffle": False}),
@@ -193,7 +191,6 @@ def train_fn(
         if test_shard is not None:
             test_shard = RayDatasetShard(
                 test_shard,
-                dataset_cls.get("test"),
                 features,
                 training_set_metadata,
                 data_loader_kwargs.update({"shuffle": False}),
@@ -237,7 +234,7 @@ def tune_batch_size_fn(
         initialize_pytorch(horovod=hvd)
 
         # pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
-        train_shard = RayDatasetShard(dataset.ds, dataset, features, training_set_metadata, data_loader_kwargs)
+        train_shard = RayDatasetShard(dataset.ds, features, training_set_metadata, data_loader_kwargs)
 
         device = get_torch_device()
         model = model.to(device)
@@ -266,7 +263,7 @@ def tune_learning_rate_fn(
         initialize_pytorch(horovod=hvd)
 
         # pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
-        train_shard = RayDatasetShard(dataset.ds, dataset, features, training_set_metadata, data_loader_kwargs)
+        train_shard = RayDatasetShard(dataset.ds, features, training_set_metadata, data_loader_kwargs)
 
         device = get_torch_device()
         model = model.to(device)
@@ -370,13 +367,10 @@ class RayTrainerV2(BaseTrainer):
         #     dataset["test"] = test_set.pipeline(shuffle=False, **self.data_loader_kwargs)
 
         dataset = {"train": training_set.ds}
-        dataset_cls = {"train": training_set}
         if validation_set is not None:
             dataset["val"] = validation_set.ds
-            dataset_cls["val"] = validation_set
         if test_set is not None:
             dataset["test"] = test_set.ds
-            dataset_cls["test"] = test_set
 
         with self.create_runner() as runner:
             results, self._validation_field, self._validation_metric = runner.run(
@@ -385,7 +379,6 @@ class RayTrainerV2(BaseTrainer):
                     "executable_kwargs": executable_kwargs,
                     "model_ref": ray.put(self.model),
                     "data_loader_kwargs": self.data_loader_kwargs,
-                    "dataset_cls": dataset_cls,
                     **kwargs,
                 },
                 callbacks=[TqdmCallback()],
@@ -594,7 +587,6 @@ class RayLegacyTrainer(BaseTrainer):
 
 
 def eval_fn(
-    dataset_cls: Dict[str, RayDataset],
     predictor_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
     data_loader_kwargs: Dict[str, Any] = None,
@@ -609,7 +601,6 @@ def eval_fn(
 
         eval_shard = RayDatasetShard(
             rt.get_dataset_shard("eval"),
-            dataset_cls.get("eval"),
             features,
             training_set_metadata,
             data_loader_kwargs.update({"shuffle": False}),
@@ -712,7 +703,6 @@ class RayPredictor(BasePredictor):
             # datasets = {"eval": dataset.pipeline(shuffle=False, **self.data_loader_kwargs)}
 
             datasets = {"eval": dataset.ds}
-            dataset_cls = {"eval": dataset}
 
             predictor_kwargs = {
                 **self.predictor_kwargs,
@@ -724,7 +714,6 @@ class RayPredictor(BasePredictor):
                     "predictor_kwargs": predictor_kwargs,
                     "model_ref": ray.put(self.model),
                     "data_loader_kwargs": self.data_loader_kwargs,
-                    "dataset_cls": dataset_cls,
                     "training_set_metadata": dataset.training_set_metadata,
                     "features": dataset.features,
                     **kwargs,
