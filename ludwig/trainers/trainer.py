@@ -824,6 +824,7 @@ class Trainer(BaseTrainer):
 
                     # ================ Post Training Epoch ================
                     progress_tracker.epoch += 1
+                    print("Epoch updated: ", progress_tracker.epoch)
                     self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
                     if self.is_coordinator():

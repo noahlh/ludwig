@@ -169,7 +169,9 @@ class RayDatasetShard(Dataset):
                 window_size_bytes=data_loader_kwargs.get("window_size_bytes", None),
             ).iter_datasets()
         else:
-            self.dataset_iter = dataset_shard_cls.pipeline(shuffle=True, fully_executed=True, window_size_bytes=None)
+            self.dataset_iter = dataset_shard_cls.pipeline(
+                shuffle=True, fully_executed=True, window_size_bytes=None
+            ).iter_datasets()
 
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
