@@ -39,7 +39,7 @@ def load_trainer_with_kwargs(model_type: str, kwargs):  # noqa: F821
 
 
 def load_config_with_kwargs(
-    cls: Type["BaseMarshmallowConfig"], kwargs_overrides
+        cls: Type["BaseMarshmallowConfig"], kwargs_overrides
 ) -> "BaseMarshmallowConfig":  # noqa 0821
     """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema."""
     assert_is_a_marshmallow_class(cls)
@@ -176,6 +176,7 @@ def Boolean(default: bool, description=""):
         },
         default=default,
     )
+
 
 def Integer(default: Union[None, int] = None, allow_none=False, description=""):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs."""
@@ -327,6 +328,123 @@ def FloatRange(default: Union[None, float] = None, allow_none=False, description
                 dump_default=default,
                 metadata={"description": description},
             )
+        },
+        default=default,
+    )
+
+
+def IntegerOrTupleOfIntegers(default: Union[None, int, Tuple[int, ...]] = None, allow_none=False, description=""):
+    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs or a tuple of numeric inputs. """
+    val = validate.OneOf([int, tuple])
+    allow_none = allow_none or default is None
+
+    if default is not None:
+        try:
+            assert isinstance(default, int) or isinstance(default, tuple)
+            val(default)
+            if isinstance(default, tuple):
+                for i in default:
+                    assert isinstance(i, int)
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
+    return field(
+        metadata={
+            "marshmallow_field": fields.Integer(
+                validate=val,
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata={"description": description},
+            )
+        },
+        default=default,
+    )
+
+
+def PositiveIntegerOrTupleOrStringOptions(options: TList[str] = None,
+                                          allow_none=False,
+                                          default: Union[None, int, Tuple[int, ...], str] = None,
+                                          default_integer: Union[None, int] = None,
+                                          default_tuple: Union[None, Tuple[int, ...]] = None,
+                                          default_option: Union[None, str] = None,
+                                          description=""):
+    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs, a tuple of numeric inputs. """
+
+    class IntegerTupleStringOptionsField(fields.Field):
+        def _deserialize(self, value, attr, data, **kwargs):
+            if isinstance(value, int):
+                if value < 0:
+                    raise ValidationError("Value must be positive.")
+                return value
+            if isinstance(value, tuple):
+                for v in value:
+                    if v < 0:
+                        raise ValidationError("Values must be positive.")
+                return value
+            if isinstance(value, str):
+                if value not in options:
+                    raise ValidationError(f"String value should be one of {options}")
+                return value
+
+            raise ValidationError(f"Field should be either an integer, tuple of integers, or a string")
+
+        def _jsonschema_type_mapping(self):
+            # Note: schemas can normally support a list of enums that includes 'None' as an option, as we currently have
+            # in 'initializers_registry'. But to make the schema here a bit more straightforward, the user must
+            # explicitly state if 'None' is going to be supported; if this conflicts with the list of enums then an
+            # error is raised and if it's going to be supported then it will be as a separate subschema rather than as
+            # part of the string subschema (see below):
+            if None in options and not self.allow_none:
+                raise AssertionError(
+                    f"Provided string options `{options}` includes `None`, but field is not set to allow `None`."
+                )
+
+            # Prepare numeric option:
+            numeric_option = {
+                "type": "integer",
+                "title": "integer_option",
+                "default": default_integer,
+                "description": "Set to a valid number.",
+            }
+            tuple_option = {
+                "type": "tuple",
+                "title": "tuple_option",
+                "default": default_tuple,
+                "description": "Set to a valid number.",
+            }
+
+            # Prepare string option (remove None):
+            if None in options:
+                options.remove(None)
+            string_option = {
+                "type": "string",
+                "enum": options,
+                "default": default_option,
+                "title": "preconfigured_option",
+                "description": "Choose a preconfigured option.",
+            }
+            oneof_list = [
+                numeric_option,
+                tuple_option,
+                string_option,
+            ]
+
+            # Add null as an option if applicable:
+            oneof_list += (
+                [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
+                if allow_none
+                else []
+            )
+
+            return {"oneOf": oneof_list, "title": self.name, "description": description, "default": default}
+
+    return field(
+        metadata={
+            "marshmallow_field": IntegerTupleStringOptionsField(allow_none=allow_none,
+                                                                load_default=default,
+                                                                dump_default=default,
+                                                                metadata={"description": description}
+                                                                )
         },
         default=default,
     )
@@ -509,13 +627,13 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
             return {
                 "type": "array",
                 "items": [
-                    {
-                        "type": "number",
-                        "minimum": min,
-                        "maximum": max,
-                    }
-                ]
-                * N,
+                             {
+                                 "type": "number",
+                                 "minimum": min,
+                                 "maximum": max,
+                             }
+                         ]
+                         * N,
                 "default": default,
                 "description": description,
             }
@@ -550,15 +668,15 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
 
 
 def FloatOrAutoField(
-    allow_none: bool,
-    description: str,
-    default: Union[None, int, str],
-    default_numeric: Union[None, int] = None,
-    default_option: Union[None, str] = "auto",
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
+        allow_none: bool,
+        description: str,
+        default: Union[None, int, str],
+        default_numeric: Union[None, int] = None,
+        default_option: Union[None, str] = "auto",
+        min: Union[None, int] = None,
+        max: Union[None, int] = None,
+        min_exclusive: Union[None, int] = None,
+        max_exclusive: Union[None, int] = None,
 ):
     """Float that also permits an `auto` string value."""
     options: TList[str] = ["auto"]
@@ -566,15 +684,15 @@ def FloatOrAutoField(
 
 
 def IntegerOrAutoField(
-    allow_none: bool,
-    description: str,
-    default: Union[None, int, str],
-    default_numeric: Union[None, int] = None,
-    default_option: Union[None, str] = "auto",
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
+        allow_none: bool,
+        description: str,
+        default: Union[None, int, str],
+        default_numeric: Union[None, int] = None,
+        default_option: Union[None, str] = "auto",
+        min: Union[None, int] = None,
+        max: Union[None, int] = None,
+        min_exclusive: Union[None, int] = None,
+        max_exclusive: Union[None, int] = None,
 ):
     """Integer that also permits an `auto` string value."""
     options: TList[str] = ["auto"]
@@ -582,17 +700,17 @@ def IntegerOrAutoField(
 
 
 def IntegerOrStringOptionsField(
-    options: TList[str],
-    allow_none: bool,
-    description: str,
-    default: Union[None, int],
-    default_numeric: Union[None, int],
-    default_option: Union[None, str],
-    is_integer: bool = True,
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
+        options: TList[str],
+        allow_none: bool,
+        description: str,
+        default: Union[None, int],
+        default_numeric: Union[None, int],
+        default_option: Union[None, str],
+        is_integer: bool = True,
+        min: Union[None, int] = None,
+        max: Union[None, int] = None,
+        min_exclusive: Union[None, int] = None,
+        max_exclusive: Union[None, int] = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing strict integers or protected strings."""
     is_integer = True
@@ -600,17 +718,17 @@ def IntegerOrStringOptionsField(
 
 
 def NumericOrStringOptionsField(
-    options: TList[str],
-    allow_none: bool,
-    default: Union[None, int, float, str],
-    default_numeric: Union[None, int, float],
-    default_option: Union[None, str],
-    is_integer: bool = False,
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
-    description="",
+        options: TList[str],
+        allow_none: bool,
+        default: Union[None, int, float, str],
+        default_numeric: Union[None, int, float],
+        default_option: Union[None, str],
+        is_integer: bool = False,
+        min: Union[None, int] = None,
+        max: Union[None, int] = None,
+        min_exclusive: Union[None, int] = None,
+        max_exclusive: Union[None, int] = None,
+        description="",
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric values or protected strings.
 
@@ -623,10 +741,10 @@ def NumericOrStringOptionsField(
             msg_type = "integer" if is_integer else "numeric"
             if (is_integer and isinstance(value, int)) or isinstance(value, float):
                 if (
-                    (min is not None and value < min)
-                    or (min_exclusive is not None and value <= min_exclusive)
-                    or (max is not None and value > max)
-                    or (max_exclusive is not None and value >= max_exclusive)
+                        (min is not None and value < min)
+                        or (min_exclusive is not None and value <= min_exclusive)
+                        or (max is not None and value > max)
+                        or (max_exclusive is not None and value >= max_exclusive)
                 ):
                     err_min_r, err_min_n = "(", min_exclusive if min_exclusive is not None else "[", min
                     errMaxR, errMaxN = ")", max_exclusive if max_exclusive is not None else "]", max
