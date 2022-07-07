@@ -1,7 +1,7 @@
 from dataclasses import field
 from typing import Dict as TDict
 from typing import List as TList
-from typing import Tuple, Type, Union
+from typing import Tuple, Type, Union, Any
 
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_jsonschema import JSONSchema as js
@@ -462,6 +462,28 @@ def Dict(default: Union[None, TDict] = None, description=""):
         metadata={
             "marshmallow_field": fields.Dict(
                 fields.String(),
+                allow_none=True,
+                load_default=default,
+                dump_default=default,
+                metadata={"description": description},
+            )
+        },
+        default_factory=lambda: default,
+    )
+
+
+def List(default: Union[None, TList[Any]] = None, description=""):
+    """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""
+    if default is not None:
+        try:
+            assert isinstance(default, list)
+
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
+
+    return field(
+        metadata={
+            "marshmallow_field": fields.List(
                 allow_none=True,
                 load_default=default,
                 dump_default=default,
