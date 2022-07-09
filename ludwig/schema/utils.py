@@ -333,16 +333,18 @@ def FloatRange(default: Union[None, float] = None, allow_none=False, description
     )
 
 
-def IntegerOrTupleOfIntegers(default: Union[None, int, Tuple[int, ...]] = None, allow_none=False, description=""):
+def IntegerOrSequenceOfIntegers(default: Union[None, int, Tuple[int, ...], TList[int]] = None,
+                                allow_none=False,
+                                description=""):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs or a tuple of numeric inputs. """
-    val = validate.OneOf([int, tuple])
+    val = validate.OneOf([int, tuple, list])
     allow_none = allow_none or default is None
 
     if default is not None:
         try:
-            assert isinstance(default, int) or isinstance(default, tuple)
+            assert isinstance(default, int) or isinstance(default, tuple) or isinstance(default, list)
             val(default)
-            if isinstance(default, tuple):
+            if isinstance(default, tuple) or isinstance(default, list):
                 for i in default:
                     assert isinstance(i, int)
         except Exception:
