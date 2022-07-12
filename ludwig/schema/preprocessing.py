@@ -9,6 +9,24 @@ from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 from ludwig.utils.tokenizers import tokenizer_registry
 from ludwig.utils import strings_utils
+from ludwig.constants import (
+    BINARY,
+    CATEGORY,
+    INT,
+    FLOAT,
+    SPACE,
+    NUMBER,
+    SET,
+    BAG,
+    TEXT,
+    SEQUENCE,
+    TIMESERIES,
+    IMAGE,
+    AUDIO,
+    DATE,
+    H3,
+    VECTOR,
+)
 
 preprocessing_registry = Registry()
 
@@ -36,7 +54,7 @@ class BasePreprocessingConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @dataclass
-@register_preprocessor("text")
+@register_preprocessor(TEXT)
 class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
 
@@ -120,7 +138,7 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-@register_preprocessor("number")
+@register_preprocessor(NUMBER)
 class NumberPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """NumberPreprocessingConfig is a dataclass that configures the parameters used for a number input feature."""
 
@@ -152,7 +170,7 @@ class NumberPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-@register_preprocessor("binary")
+@register_preprocessor(BINARY)
 class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """BinaryPreprocessingConfig is a dataclass that configures the parameters used for a binary input feature."""
 
@@ -195,7 +213,7 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-@register_preprocessor("category")
+@register_preprocessor(CATEGORY)
 class CategoryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """CategoryPreprocessingConfig is a dataclass that configures the parameters used for a category input feature."""
 
@@ -232,7 +250,7 @@ class CategoryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-@register_preprocessor("set")
+@register_preprocessor(SET)
 class SetPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     tokenizer: Optional[str] = schema_utils.String(
@@ -277,7 +295,7 @@ class SetPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-@register_preprocessor("sequence")
+@register_preprocessor(SEQUENCE)
 class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     tokenizer: Optional[str] = schema_utils.String(
@@ -354,7 +372,7 @@ class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-@register_preprocessor("image")
+@register_preprocessor(IMAGE)
 class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
@@ -451,7 +469,7 @@ class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-@register_preprocessor("audio")
+@register_preprocessor(AUDIO)
 class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     audio_file_length_limit_in_s: Optional[int] = schema_utils.NonNegativeFloat(
@@ -502,7 +520,7 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-@register_preprocessor("timeseries")
+@register_preprocessor(TIMESERIES)
 class TimeseriesPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     tokenizer: Optional[str] = schema_utils.StringOptions(
@@ -552,7 +570,7 @@ class TimeseriesPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-@register_preprocessor("bag")
+@register_preprocessor(BAG)
 class BagPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     tokenizer: Optional[str] = schema_utils.String(
@@ -597,7 +615,7 @@ class BagPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-@register_preprocessor("h3")
+@register_preprocessor(H3)
 class H3PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
@@ -621,7 +639,7 @@ class H3PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-@register_preprocessor("date")
+@register_preprocessor(DATE)
 class DatePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
@@ -652,7 +670,7 @@ class DatePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-@register_preprocessor("vector")
+@register_preprocessor(VECTOR)
 class VectorPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     vector_size: Optional[int] = schema_utils.PositiveInteger(

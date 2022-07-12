@@ -6,6 +6,7 @@ from ludwig.encoders.registry import get_encoder_classes
 
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
 
 
 @dataclass
@@ -20,6 +21,11 @@ class AudioInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
         list(get_encoder_classes('audio').keys()),
         default="parallel_cnn",
         description="Encoder to use for this audio feature.",
+    )
+
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type='audio',
+        encoder_type='audio',
     )
 
     tied: Optional[str] = schema_utils.String(
