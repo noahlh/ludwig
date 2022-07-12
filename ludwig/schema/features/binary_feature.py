@@ -2,11 +2,11 @@ from typing import Optional
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.encoders.registry import get_encoder_classes
 from ludwig.decoders.registry import get_decoder_classes
 
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
 
 
 @dataclass
@@ -17,10 +17,9 @@ class BinaryInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
         feature_type='binary'
     )
 
-    encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes('binary').keys()),
-        default="passthrough",
-        description="Encoder to use for this binary feature.",
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type='binary',
+        default='passthrough',
     )
 
     # TODO(#1673): Need some more logic here for validating against input features

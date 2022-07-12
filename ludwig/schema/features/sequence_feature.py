@@ -2,11 +2,11 @@ from typing import Optional
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.encoders.registry import get_encoder_classes
 from ludwig.decoders.registry import get_decoder_classes
 
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
 
 
 @dataclass
@@ -19,10 +19,9 @@ class SequenceInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
         feature_type='sequence'
     )
 
-    encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes('sequence').keys()),
-        default="embed",
-        description="Encoder to use for this sequence feature.",
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type='sequence',
+        default='embed',
     )
 
     # TODO(#1673): Need some more logic here for validating against input features

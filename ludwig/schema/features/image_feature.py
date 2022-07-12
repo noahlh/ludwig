@@ -2,10 +2,9 @@ from typing import Optional
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.encoders.registry import get_encoder_classes
-
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
 
 
 @dataclass
@@ -18,10 +17,9 @@ class ImageInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
         feature_type='image'
     )
 
-    encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes('image').keys()),
-        default="stacked_cnn",
-        description="Encoder to use for this image feature.",
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type='image',
+        default='stacked_cnn',
     )
 
     # TODO(#1673): Need some more logic here for validating against input features

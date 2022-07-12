@@ -2,10 +2,9 @@ from typing import Optional
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.encoders.registry import get_encoder_classes
-
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
 
 
 @dataclass
@@ -18,10 +17,9 @@ class BagInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
         feature_type='bag'
     )
 
-    encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes('bag').keys()),
-        default="embed",
-        description="Encoder to use for this bag feature.",
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type='bag',
+        default='embed',
     )
 
     # TODO(#1673): Need some more logic here for validating against input features
