@@ -1,13 +1,14 @@
 from abc import ABC
 from dataclasses import field
-from typing import Optional, Union, List, ClassVar
+from typing import ClassVar, List, Optional, Union
+
+from marshmallow import fields, Schema, ValidationError
+from marshmallow_dataclass import dataclass
+
 from ludwig.constants import TYPE
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.generic_encoders import DenseEncoder, PassthroughEncoder
 from ludwig.encoders.registry import get_encoder_classes, get_encoder_cls
-
-from marshmallow import Schema, fields, ValidationError
-from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
 
 
@@ -55,17 +56,49 @@ class DenseEncoder(Schema):
     )
 
     weights_initializer: Optional[Union[str, dict]] = schema_utils.StringOptions(  # TODO: Add support for String/Dict
-        ["constant", "identity", "zeros", "ones", "orthogonal", "normal", "uniform", "truncated_normal",
-         "variance_scaling", "glorot_normal", "glorot_uniform", "xavier_normal", "xavier_uniform", "he_normal",
-         "he_uniform", "lecun_normal", "lecun_uniform"],
+        [
+            "constant",
+            "identity",
+            "zeros",
+            "ones",
+            "orthogonal",
+            "normal",
+            "uniform",
+            "truncated_normal",
+            "variance_scaling",
+            "glorot_normal",
+            "glorot_uniform",
+            "xavier_normal",
+            "xavier_uniform",
+            "he_normal",
+            "he_uniform",
+            "lecun_normal",
+            "lecun_uniform",
+        ],
         default="glorot_uniform",
         description="Initializer for the weight matrix.",
     )
 
     bias_initializer: Optional[Union[str, dict]] = schema_utils.StringOptions(  # TODO: Add support for String/Dict
-        ["constant", "identity", "zeros", "ones", "orthogonal", "normal", "uniform", "truncated_normal",
-         "variance_scaling", "glorot_normal", "glorot_uniform", "xavier_normal", "xavier_uniform", "he_normal",
-         "he_uniform", "lecun_normal", "lecun_uniform"],
+        [
+            "constant",
+            "identity",
+            "zeros",
+            "ones",
+            "orthogonal",
+            "normal",
+            "uniform",
+            "truncated_normal",
+            "variance_scaling",
+            "glorot_normal",
+            "glorot_uniform",
+            "xavier_normal",
+            "xavier_uniform",
+            "he_normal",
+            "he_uniform",
+            "lecun_normal",
+            "lecun_uniform",
+        ],
         default="zeros",
         description="Initializer for the bias vector.",
     )
@@ -120,17 +153,15 @@ def get_encoder_conds(feature_type: str):
 
 
 def EncoderDataclassField(feature_type: str, default: str):
-    """
-    Custom dataclass field that when used inside a dataclass will allow the user to specify a preprocessing config.
+    """Custom dataclass field that when used inside a dataclass will allow the user to specify a preprocessing
+    config.
 
     Returns: Initialized dataclass field that converts an untyped dict with params to a preprocessing config.
     """
 
     class EncoderMarshmallowField(fields.Field):
-        """
-        Custom marshmallow field that deserializes a dict for a valid preprocessing config from the
-        preprocessing_registry and creates a corresponding `oneOf` JSON schema for external usage.
-        """
+        """Custom marshmallow field that deserializes a dict for a valid preprocessing config from the
+        preprocessing_registry and creates a corresponding `oneOf` JSON schema for external usage."""
 
         def _deserialize(self, value, attr, data, **kwargs):
             if value is None:
@@ -165,8 +196,8 @@ def EncoderDataclassField(feature_type: str, default: str):
 
     try:
         encoder = get_encoder_cls(feature_type, default).get_schema_cls()
-        load_default = encoder.Schema().load({'type': default})
-        dump_default = encoder.Schema().dump({'type': default})
+        load_default = encoder.Schema().load({"type": default})
+        dump_default = encoder.Schema().dump({"type": default})
 
         return field(
             metadata={
@@ -179,6 +210,4 @@ def EncoderDataclassField(feature_type: str, default: str):
             default_factory=lambda: load_default,
         )
     except Exception as e:
-        raise ValidationError(f"Unsupported encoder type: {default}. See encoder_registry. "
-                              f"Details: {e}")
-
+        raise ValidationError(f"Unsupported encoder type: {default}. See encoder_registry. " f"Details: {e}")

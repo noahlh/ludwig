@@ -5,24 +5,20 @@ from marshmallow_dataclass import dataclass
 from ludwig.constants import VECTOR
 from ludwig.decoders.registry import get_decoder_classes
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
-from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
 
 
 @dataclass
 class VectorInputFeatureConfig(BaseInputFeatureConfig):
-    """
-    VectorInputFeatureConfig is a dataclass that configures the parameters used for a vector input feature.
-    """
+    """VectorInputFeatureConfig is a dataclass that configures the parameters used for a vector input feature."""
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type=VECTOR
-    )
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=VECTOR)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
         feature_type=VECTOR,
-        default='dense',
+        default="dense",
     )
 
 

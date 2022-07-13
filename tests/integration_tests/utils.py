@@ -268,7 +268,7 @@ def sequence_feature(**kwargs):
             "state_size": 8,
             "num_filters": 8,
             "hidden_size": 8,
-        }
+        },
     }
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]

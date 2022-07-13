@@ -1,7 +1,8 @@
 from dataclasses import field
+from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
-from typing import Tuple, Type, Union, Any
+from typing import Tuple, Type, Union
 
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_jsonschema import JSONSchema as js
@@ -40,7 +41,7 @@ def load_trainer_with_kwargs(model_type: str, kwargs):  # noqa: F821
 
 
 def load_config_with_kwargs(
-        cls: Type["BaseMarshmallowConfig"], kwargs_overrides
+    cls: Type["BaseMarshmallowConfig"], kwargs_overrides
 ) -> "BaseMarshmallowConfig":  # noqa 0821
     """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema."""
     assert_is_a_marshmallow_class(cls)
@@ -385,10 +386,11 @@ def FloatRange(
     )
 
 
-def IntegerOrSequenceOfIntegers(default: Union[None, int, Tuple[int, ...], TList[int]] = None,
-                                allow_none=False,
-                                description=""):
-    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs or a tuple of numeric inputs. """
+def IntegerOrSequenceOfIntegers(
+    default: Union[None, int, Tuple[int, ...], TList[int]] = None, allow_none=False, description=""
+):
+    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs or a tuple of numeric
+    inputs."""
     val = validate.OneOf([int, tuple, list])
     allow_none = allow_none or default is None
 
@@ -415,14 +417,16 @@ def IntegerOrSequenceOfIntegers(default: Union[None, int, Tuple[int, ...], TList
     )
 
 
-def PositiveIntegerOrTupleOrStringOptions(options: TList[str] = None,
-                                          allow_none=False,
-                                          default: Union[None, int, Tuple[int, ...], str] = None,
-                                          default_integer: Union[None, int] = None,
-                                          default_tuple: Union[None, Tuple[int, ...]] = None,
-                                          default_option: Union[None, str] = None,
-                                          description=""):
-    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs, a tuple of numeric inputs. """
+def PositiveIntegerOrTupleOrStringOptions(
+    options: TList[str] = None,
+    allow_none=False,
+    default: Union[None, int, Tuple[int, ...], str] = None,
+    default_integer: Union[None, int] = None,
+    default_tuple: Union[None, Tuple[int, ...]] = None,
+    default_option: Union[None, str] = None,
+    description="",
+):
+    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs, a tuple of numeric inputs."""
 
     class IntegerTupleStringOptionsField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):
@@ -494,11 +498,9 @@ def PositiveIntegerOrTupleOrStringOptions(options: TList[str] = None,
 
     return field(
         metadata={
-            "marshmallow_field": IntegerTupleStringOptionsField(allow_none=allow_none,
-                                                                load_default=default,
-                                                                dump_default=default,
-                                                                metadata={"description": description}
-                                                                )
+            "marshmallow_field": IntegerTupleStringOptionsField(
+                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
+            )
         },
         default=default,
     )
@@ -705,13 +707,13 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
             return {
                 "type": "array",
                 "items": [
-                             {
-                                 "type": "number",
-                                 "minimum": min,
-                                 "maximum": max,
-                             }
-                         ]
-                         * N,
+                    {
+                        "type": "number",
+                        "minimum": min,
+                        "maximum": max,
+                    }
+                ]
+                * N,
                 "default": default,
                 "description": description,
             }
@@ -823,10 +825,10 @@ def NumericOrStringOptionsField(
             msg_type = "integer" if is_integer else "numeric"
             if (is_integer and isinstance(value, int)) or isinstance(value, float):
                 if (
-                        (min is not None and value < min)
-                        or (min_exclusive is not None and value <= min_exclusive)
-                        or (max is not None and value > max)
-                        or (max_exclusive is not None and value >= max_exclusive)
+                    (min is not None and value < min)
+                    or (min_exclusive is not None and value <= min_exclusive)
+                    or (max is not None and value > max)
+                    or (max_exclusive is not None and value >= max_exclusive)
                 ):
                     err_min_r, err_min_n = "(", min_exclusive if min_exclusive is not None else "[", min
                     errMaxR, errMaxN = ")", max_exclusive if max_exclusive is not None else "]", max

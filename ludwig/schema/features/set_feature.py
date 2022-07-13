@@ -5,24 +5,20 @@ from marshmallow_dataclass import dataclass
 from ludwig.constants import SET
 from ludwig.decoders.registry import get_decoder_classes
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
-from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
 
 
 @dataclass
 class SetInputFeatureConfig(BaseInputFeatureConfig):
-    """
-    SetInputFeatureConfig is a dataclass that configures the parameters used for a set input feature.
-    """
+    """SetInputFeatureConfig is a dataclass that configures the parameters used for a set input feature."""
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type=SET
-    )
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SET)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
         feature_type=SET,
-        default='embed',
+        default="embed",
     )
 
 

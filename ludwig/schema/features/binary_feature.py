@@ -5,22 +5,20 @@ from marshmallow_dataclass import dataclass
 from ludwig.constants import BINARY
 from ludwig.decoders.registry import get_decoder_classes
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
-from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
 
 
 @dataclass
 class BinaryInputFeatureConfig(BaseInputFeatureConfig):
     """BinaryInputFeature is a dataclass that configures the parameters used for a binary input feature."""
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type=BINARY
-    )
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=BINARY)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
         feature_type=BINARY,
-        default='passthrough',
+        default="passthrough",
     )
 
 

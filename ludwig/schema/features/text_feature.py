@@ -5,24 +5,20 @@ from marshmallow_dataclass import dataclass
 from ludwig.constants import TEXT
 from ludwig.decoders.registry import get_decoder_classes
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
-from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
 
 
 @dataclass
 class TextInputFeatureConfig(BaseInputFeatureConfig):
-    """
-    TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature.
-    """
+    """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type=TEXT
-    )
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TEXT)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
         feature_type=TEXT,
-        default='parallel_cnn',
+        default="parallel_cnn",
     )
 
 

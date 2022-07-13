@@ -1,27 +1,28 @@
-from typing import ClassVar, List, Union, Callable
+from typing import Callable, ClassVar, List, Union
+
+from marshmallow_dataclass import dataclass
+
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.text_encoders import (
     ALBERTEncoder,
-    MT5Encoder,
-    XLMRoBERTaEncoder,
+    AutoTransformerEncoder,
     BERTEncoder,
-    XLMEncoder,
-    XLNetEncoder,
-    GPTEncoder,
-    GPT2Encoder,
-    RoBERTaEncoder,
-    TransformerXLEncoder,
-    DistilBERTEncoder,
-    CTRLEncoder,
     CamemBERTEncoder,
-    T5Encoder,
-    FlauBERTEncoder,
+    CTRLEncoder,
+    DistilBERTEncoder,
     ELECTRAEncoder,
+    FlauBERTEncoder,
+    GPT2Encoder,
+    GPTEncoder,
     LongformerEncoder,
-    AutoTransformerEncoder
+    MT5Encoder,
+    RoBERTaEncoder,
+    T5Encoder,
+    TransformerXLEncoder,
+    XLMEncoder,
+    XLMRoBERTaEncoder,
+    XLNetEncoder,
 )
-
-from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
 
 
@@ -66,7 +67,7 @@ class ALBERTConfig(schema_utils.BaseMarshmallowConfig):
     vocab_size: int = schema_utils.PositiveInteger(
         default=30000,
         description="Vocabulary size of the ALBERT model. Defines the number of different tokens that can be "
-                    "represented by the inputs_ids passed.",
+        "represented by the inputs_ids passed.",
     )
 
     embedding_size: int = schema_utils.PositiveInteger(
@@ -97,7 +98,7 @@ class ALBERTConfig(schema_utils.BaseMarshmallowConfig):
     intermediate_size: int = schema_utils.PositiveInteger(
         default=16384,
         description="The dimensionality of the “intermediate” (often named feed-forward) layer in the Transformer "
-                    "encoder.",
+        "encoder.",
     )
 
     inner_group_num: int = schema_utils.PositiveInteger(
@@ -128,7 +129,7 @@ class ALBERTConfig(schema_utils.BaseMarshmallowConfig):
     max_position_embeddings: int = schema_utils.PositiveInteger(
         default=512,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
-                    "something large (e.g., 512 or 1024 or 2048).",
+        "something large (e.g., 512 or 1024 or 2048).",
     )
 
     type_vocab_size: int = schema_utils.PositiveInteger(
@@ -221,7 +222,7 @@ class MT5Config(schema_utils.BaseMarshmallowConfig):
     vocab_size: int = schema_utils.PositiveInteger(
         default=250112,
         description="Vocabulary size of the T5 model. Defines the number of different tokens that can be represented "
-                    "by the inputs_ids passed when calling T5Model or TFT5Model.",
+        "by the inputs_ids passed when calling T5Model or TFT5Model.",
     )
 
     d_model: int = schema_utils.PositiveInteger(
@@ -232,7 +233,7 @@ class MT5Config(schema_utils.BaseMarshmallowConfig):
     d_kv: int = schema_utils.PositiveInteger(
         default=64,
         description="Size of the key, query, value projections per attention head. d_kv has to be equal to d_model // "
-                    "num_heads.",
+        "num_heads.",
     )
 
     d_ff: int = schema_utils.PositiveInteger(
@@ -248,7 +249,7 @@ class MT5Config(schema_utils.BaseMarshmallowConfig):
     num_decoder_layers: int = schema_utils.PositiveInteger(
         default=None,
         description="Number of hidden layers in the Transformer decoder. Will use the same value as num_layers if not "
-                    "set.",
+        "set.",
     )
 
     num_heads: int = schema_utils.PositiveInteger(
@@ -274,7 +275,7 @@ class MT5Config(schema_utils.BaseMarshmallowConfig):
     initializer_factor: float = schema_utils.NonNegativeFloat(
         default=1.0,
         description="A factor for initializing all weight matrices (should be kept to 1, used internally for "
-                    "initialization testing)",
+        "initialization testing)",
     )
 
     feed_forward_proj: str = schema_utils.StringOptions(
@@ -316,7 +317,7 @@ class MT5Config(schema_utils.BaseMarshmallowConfig):
     decoder_start_token_id: int = schema_utils.PositiveInteger(
         default=0,
         description="If an encoder-decoder model starts decoding with a different token than _bos_, the id of that "
-                    "token.",
+        "token.",
     )
 
     pretrained_kwargs: dict = schema_utils.Dict(
@@ -435,7 +436,7 @@ class BERTConfig(schema_utils.BaseMarshmallowConfig):
     vocab_size: int = schema_utils.PositiveInteger(
         default=30522,
         description="Vocabulary size of the BERT model. Defines the number of different tokens that can be "
-                    "represented by the inputs_ids passed when calling BertModel or TFBertModel.",
+        "represented by the inputs_ids passed when calling BertModel or TFBertModel.",
     )
 
     hidden_size: int = schema_utils.PositiveInteger(
@@ -481,7 +482,7 @@ class BERTConfig(schema_utils.BaseMarshmallowConfig):
     max_position_embeddings: int = schema_utils.PositiveInteger(
         default=512,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
-                    "something large just in case (e.g., 512 or 1024 or 2048).",
+        "something large just in case (e.g., 512 or 1024 or 2048).",
     )
 
     type_vocab_size: int = schema_utils.PositiveInteger(
@@ -569,7 +570,7 @@ class XLMConfig(schema_utils.BaseMarshmallowConfig):
     vocab_size: int = schema_utils.PositiveInteger(
         default=30145,
         description="Vocabulary size of the BERT model. Defines the number of different tokens that can be "
-                    "represented by the inputs_ids passed when calling XLMModel or TFXLMModel.",
+        "represented by the inputs_ids passed when calling XLMModel or TFXLMModel.",
     )
 
     emb_dim: int = schema_utils.PositiveInteger(
@@ -614,14 +615,14 @@ class XLMConfig(schema_utils.BaseMarshmallowConfig):
     causal: bool = schema_utils.Boolean(
         default=False,
         description="Whether or not the model should behave in a causal manner. Causal models use a triangular "
-                    "attention mask in order to only attend to the left-side context instead if a bidirectional "
-                    "context.",
+        "attention mask in order to only attend to the left-side context instead if a bidirectional "
+        "context.",
     )
 
     asm: bool = schema_utils.Boolean(
         default=False,
         description="Whether or not to use an adaptive log softmax projection layer instead of a linear layer for the "
-                    "prediction layer.",
+        "prediction layer.",
     )
 
     n_langs: int = schema_utils.PositiveInteger(
@@ -632,19 +633,19 @@ class XLMConfig(schema_utils.BaseMarshmallowConfig):
     use_lang_emb: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use language embeddings. Some models use additional language embeddings, "
-                    "see the multilingual models page for information on how to use them.",
+        "see the multilingual models page for information on how to use them.",
     )
 
     max_position_embeddings: int = schema_utils.PositiveInteger(
         default=512,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
-                    "something large just in case (e.g., 512 or 1024 or 2048).",
+        "something large just in case (e.g., 512 or 1024 or 2048).",
     )
 
     embed_init_std: float = schema_utils.NonNegativeFloat(
-        default=2048 ** -0.5,
+        default=2048**-0.5,
         description="The standard deviation of the truncated_normal_initializer for initializing the embedding "
-                    "matrices.",
+        "matrices.",
     )
 
     layer_norm_eps: float = schema_utils.NonNegativeFloat(
@@ -655,7 +656,7 @@ class XLMConfig(schema_utils.BaseMarshmallowConfig):
     init_std: float = schema_utils.NonNegativeFloat(
         default=0.02,
         description="The standard deviation of the truncated_normal_initializer for initializing all weight matrices "
-                    "except the embedding matrices.",
+        "except the embedding matrices.",
     )
 
     bos_index: int = schema_utils.PositiveInteger(
@@ -674,8 +675,7 @@ class XLMConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     unk_index: int = schema_utils.PositiveInteger(
-        default=3,
-        description="The index of the unknown token in the vocabulary."
+        default=3, description="The index of the unknown token in the vocabulary."
     )
 
     mask_index: int = schema_utils.PositiveInteger(
@@ -686,7 +686,7 @@ class XLMConfig(schema_utils.BaseMarshmallowConfig):
     is_encoder: bool = schema_utils.Boolean(
         default=True,
         description="Whether or not the initialized model should be a transformer encoder or decoder as seen in "
-                    "Vaswani et al.",
+        "Vaswani et al.",
     )
 
     start_n_top: int = schema_utils.PositiveInteger(
@@ -707,7 +707,7 @@ class XLMConfig(schema_utils.BaseMarshmallowConfig):
     lang_id: int = schema_utils.PositiveInteger(
         default=0,
         description="The ID of the language used by the model. This parameter is used when generating text in a given "
-                    "language.",
+        "language.",
     )
 
     pad_token_id: int = schema_utils.PositiveInteger(
@@ -767,13 +767,13 @@ class GPTConfig(schema_utils.BaseMarshmallowConfig):
     vocab_size: int = schema_utils.PositiveInteger(
         default=30522,
         description="Vocabulary size of the GPT model. Defines the number of different tokens that can be "
-                    "represented by the inputs_ids passed when calling OpenAIGPTModel or TFOpenAIGPTModel.",
+        "represented by the inputs_ids passed when calling OpenAIGPTModel or TFOpenAIGPTModel.",
     )
 
     n_positions: int = schema_utils.PositiveInteger(
         default=40478,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
-                    "something large just in case (e.g., 512 or 1024 or 2048).",
+        "something large just in case (e.g., 512 or 1024 or 2048).",
     )
 
     n_ctx: int = schema_utils.PositiveInteger(
@@ -869,13 +869,13 @@ class GPT2Config(schema_utils.BaseMarshmallowConfig):
     vocab_size: int = schema_utils.PositiveInteger(
         default=50257,
         description="Vocabulary size of the GPT-2 model. Defines the number of different tokens that can be "
-                    "represented by the inputs_ids passed when calling GPT2Model or TFGPT2Model.",
+        "represented by the inputs_ids passed when calling GPT2Model or TFGPT2Model.",
     )
 
     n_positions: int = schema_utils.PositiveInteger(
         default=1024,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
-                    "something large just in case (e.g., 512 or 1024 or 2048).",
+        "something large just in case (e.g., 512 or 1024 or 2048).",
     )
 
     n_ctx: int = schema_utils.PositiveInteger(
@@ -963,7 +963,7 @@ class RoBERTaConfig(schema_utils.BaseMarshmallowConfig):
         default=True,
         description="Whether to use the pretrained weights for the model.",
     )
-    
+
     pretrained_model_name_or_path: str = schema_utils.String(
         default="roberta-base",
         description="Name or path of the pretrained model.",
@@ -1051,11 +1051,11 @@ class TransformerXLConfig(schema_utils.BaseMarshmallowConfig):
     vocab_size: int = schema_utils.PositiveInteger(
         default=267735,
         description="Vocabulary size of the TransfoXL model. Defines the number of different tokens that can be "
-                    "represented by the inputs_ids passed when calling TransfoXLModel or TFTransfoXLModel.",
+        "represented by the inputs_ids passed when calling TransfoXLModel or TFTransfoXLModel.",
     )
 
     cutoffs: List[int] = schema_utils.List(
-        default= [20000, 40000, 200000],
+        default=[20000, 40000, 200000],
         description="Cutoffs for the adaptive softmax.",
     )
 
@@ -1230,7 +1230,7 @@ class XLNetConfig(schema_utils.BaseMarshmallowConfig):
     vocab_size: int = schema_utils.PositiveInteger(
         default=32000,
         description="Vocabulary size of the XLNet model. Defines the number of different tokens that can be "
-                    "represented by the inputs_ids passed when calling XLNetModel or TFXLNetModel.",
+        "represented by the inputs_ids passed when calling XLNetModel or TFXLNetModel.",
     )
 
     d_model: int = schema_utils.PositiveInteger(
@@ -1257,7 +1257,7 @@ class XLNetConfig(schema_utils.BaseMarshmallowConfig):
         ["gelu", "relu", "silu", "gelu_new"],
         default="gelu",
         description="The non-linear activation function (function or string) in the encoder and pooler. If string, "
-                    "'gelu', 'relu', 'silu' and 'gelu_new' are supported.",
+        "'gelu', 'relu', 'silu' and 'gelu_new' are supported.",
     )
 
     untie_r: bool = schema_utils.Boolean(
@@ -1289,7 +1289,7 @@ class XLNetConfig(schema_utils.BaseMarshmallowConfig):
     mem_len: int = schema_utils.PositiveInteger(
         default=512,
         description="The number of tokens to cache. The key/value pairs that have already been pre-computed in a "
-                    "previous forward pass won’t be re-computed. ",
+        "previous forward pass won’t be re-computed. ",
     )
 
     reuse_len: int = schema_utils.PositiveInteger(
@@ -1310,13 +1310,13 @@ class XLNetConfig(schema_utils.BaseMarshmallowConfig):
     bi_data: bool = schema_utils.Boolean(
         default=False,
         description="Whether or not to use bidirectional input pipeline. Usually set to True during pretraining and "
-                    "False during finetuning.",
+        "False during finetuning.",
     )
 
     clamp_len: int = schema_utils.Integer(
         default=-1,
         description="Clamp all relative distances larger than clamp_len. Setting this attribute to -1 means no "
-                    "clamping.",
+        "clamping.",
     )
 
     same_length: bool = schema_utils.Boolean(
@@ -1328,7 +1328,7 @@ class XLNetConfig(schema_utils.BaseMarshmallowConfig):
         ["last", "first", "mean", "cls_index", "attn"],
         default="last",
         description="Argument used when doing sequence summary. Used in the sequence classification and multiple "
-                    "choice models.",
+        "choice models.",
     )
 
     summary_use_proj: bool = schema_utils.Boolean(
@@ -1339,7 +1339,7 @@ class XLNetConfig(schema_utils.BaseMarshmallowConfig):
     summary_activation: str = schema_utils.String(
         default="tanh",
         description="Argument used when doing sequence summary. Used in the sequence classification and multiple "
-                    "choice models.",
+        "choice models.",
     )
 
     summary_last_dropout: float = schema_utils.FloatRange(
@@ -1419,13 +1419,13 @@ class DistilBERTConfig(schema_utils.BaseMarshmallowConfig):
     vocab_size: int = schema_utils.PositiveInteger(
         default=30522,
         description="Vocabulary size of the DistilBERT model. Defines the number of different tokens that can be "
-                    "represented by the inputs_ids passed when calling DistilBertModel or TFDistilBertModel.",
+        "represented by the inputs_ids passed when calling DistilBertModel or TFDistilBertModel.",
     )
 
     max_position_embeddings: int = schema_utils.PositiveInteger(
         default=512,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
-                    "something large just in case (e.g., 512 or 1024 or 2048).",
+        "something large just in case (e.g., 512 or 1024 or 2048).",
     )
 
     sinusoidal_pos_embds: bool = schema_utils.Boolean(
@@ -1465,11 +1465,11 @@ class DistilBERTConfig(schema_utils.BaseMarshmallowConfig):
         description="The dropout ratio for the attention probabilities.",
     )
 
-    activation: Union[str, Callable] = schema_utils.StringOptions( # TODO: Add support for callable
+    activation: Union[str, Callable] = schema_utils.StringOptions(  # TODO: Add support for callable
         ["gelu", "relu", "silu", "gelu_new"],
         default="gelu",
         description="The non-linear activation function (function or string) in the encoder and pooler. If string, "
-                    "'gelu', 'relu', 'silu' and 'gelu_new' are supported.",
+        "'gelu', 'relu', 'silu' and 'gelu_new' are supported.",
     )
 
     initializer_range: float = schema_utils.NonNegativeFloat(
@@ -1489,7 +1489,7 @@ class DistilBERTConfig(schema_utils.BaseMarshmallowConfig):
         min=0.0,
         max=1.0,
         description="The dropout probabilities used in the sequence classification and the multiple choice model "
-                    "DistilBertForSequenceClassification.",
+        "DistilBertForSequenceClassification.",
     )
 
     pretrained_kwargs: dict = schema_utils.Dict(
@@ -1539,13 +1539,13 @@ class CTRLConfig(schema_utils.BaseMarshmallowConfig):
     vocab_size: int = schema_utils.PositiveInteger(
         default=246534,
         description="Vocabulary size of the CTRL model. Defines the number of different tokens that can be "
-                    "represented by the inputs_ids passed when calling CTRLModel or TFCTRLModel.",
+        "represented by the inputs_ids passed when calling CTRLModel or TFCTRLModel.",
     )
 
     n_positions: int = schema_utils.PositiveInteger(
         default=256,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
-                    "something large just in case (e.g., 512 or 1024 or 2048).",
+        "something large just in case (e.g., 512 or 1024 or 2048).",
     )
 
     n_ctx: int = schema_utils.PositiveInteger(
@@ -1692,7 +1692,7 @@ class CamemBERTConfig(schema_utils.BaseMarshmallowConfig):
     max_position_embeddings: int = schema_utils.PositiveInteger(
         default=512,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
-                    "something large just in case (e.g., 512 or 1024 or 2048).",
+        "something large just in case (e.g., 512 or 1024 or 2048).",
     )
 
     type_vocab_size: int = schema_utils.PositiveInteger(
@@ -1780,7 +1780,7 @@ class T5Config(schema_utils.BaseMarshmallowConfig):
     vocab_size: int = schema_utils.PositiveInteger(
         default=32128,
         description="Vocabulary size of the T5 model. Defines the number of different tokens that can be represented "
-                    "by the inputs_ids passed when calling T5Model or TFT5Model.",
+        "by the inputs_ids passed when calling T5Model or TFT5Model.",
     )
 
     d_model: int = schema_utils.PositiveInteger(
@@ -1791,7 +1791,7 @@ class T5Config(schema_utils.BaseMarshmallowConfig):
     d_kv: int = schema_utils.PositiveInteger(
         default=64,
         description="Size of the key, query, value projections per attention head. d_kv has to be equal to d_model // "
-                    "num_heads.",
+        "num_heads.",
     )
 
     d_ff: int = schema_utils.PositiveInteger(
@@ -1807,7 +1807,7 @@ class T5Config(schema_utils.BaseMarshmallowConfig):
     num_decoder_layers: int = schema_utils.PositiveInteger(
         default=None,
         description="Number of hidden layers in the Transformer decoder. Will use the same value as num_layers if not "
-                    "set.",
+        "set.",
     )
 
     num_heads: int = schema_utils.PositiveInteger(
@@ -1833,14 +1833,14 @@ class T5Config(schema_utils.BaseMarshmallowConfig):
     initializer_factor: float = schema_utils.NonNegativeFloat(
         default=1,
         description="A factor for initializing all weight matrices (should be kept to 1, used internally for "
-                    "initialization testing).",
+        "initialization testing).",
     )
 
     feed_forward_proj: str = schema_utils.StringOptions(
         ["relu", "gated-gelu"],
         default="relu",
         description="Type of feed forward layer to be used. Should be one of 'relu' or 'gated-gelu'. T5v1.1 uses the "
-                    "'gated-gelu' feed forward projection. Original T5 uses 'relu'.",
+        "'gated-gelu' feed forward projection. Original T5 uses 'relu'.",
     )
 
     pretrained_kwargs: dict = schema_utils.Dict(
@@ -1890,13 +1890,13 @@ class FlauBERTConfig(schema_utils.BaseMarshmallowConfig):
     vocab_size: int = schema_utils.PositiveInteger(
         default=30145,
         description="Vocabulary size of the FlauBERT model. Defines the number of different tokens that can be "
-                    "represented by the inputs_ids passed when calling FlaubertModel or TFFlaubertModel.",
+        "represented by the inputs_ids passed when calling FlaubertModel or TFFlaubertModel.",
     )
 
     pre_norm: bool = schema_utils.Boolean(
         default=False,
         description="Whether to apply the layer normalization before or after the feed forward layer following the "
-                    "attention in each layer (Vaswani et al., Tensor2Tensor for Neural Machine Translation. 2018)",
+        "attention in each layer (Vaswani et al., Tensor2Tensor for Neural Machine Translation. 2018)",
     )
 
     layerdrop: float = schema_utils.FloatRange(
@@ -1904,7 +1904,7 @@ class FlauBERTConfig(schema_utils.BaseMarshmallowConfig):
         min=0.0,
         max=1.0,
         description="Probability to drop layers during training (Fan et al., Reducing Transformer Depth on Demand "
-                    "with Structured Dropout. ICLR 2020)",
+        "with Structured Dropout. ICLR 2020)",
     )
 
     emb_dim: int = schema_utils.PositiveInteger(
@@ -1949,14 +1949,14 @@ class FlauBERTConfig(schema_utils.BaseMarshmallowConfig):
     causal: bool = schema_utils.Boolean(
         default=False,
         description="Whether or not the model should behave in a causal manner. Causal models use a triangular "
-                    "attention mask in order to only attend to the left-side context instead if a bidirectional "
-                    "context.",
+        "attention mask in order to only attend to the left-side context instead if a bidirectional "
+        "context.",
     )
 
     asm: bool = schema_utils.Boolean(
         default=False,
         description="Whether or not to use an adaptive log softmax projection layer instead of a linear layer for the "
-                    "prediction layer.",
+        "prediction layer.",
     )
 
     n_langs: int = schema_utils.PositiveInteger(
@@ -1967,25 +1967,25 @@ class FlauBERTConfig(schema_utils.BaseMarshmallowConfig):
     use_lang_emb: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use language embeddings. Some models use additional language embeddings, "
-                    "see the multilingual models page for information on how to use them.",
+        "see the multilingual models page for information on how to use them.",
     )
 
     max_position_embeddings: int = schema_utils.PositiveInteger(
         default=512,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
-                    "something large just in case (e.g., 512 or 1024 or 2048).",
+        "something large just in case (e.g., 512 or 1024 or 2048).",
     )
 
     embed_init_std: float = schema_utils.NonNegativeFloat(
-        default=2048 ** -0.5,
+        default=2048**-0.5,
         description="The standard deviation of the truncated_normal_initializer for initializing the embedding "
-                    "matrices.",
+        "matrices.",
     )
 
     init_std: int = schema_utils.PositiveInteger(
         default=50257,
         description="The standard deviation of the truncated_normal_initializer for initializing all weight matrices "
-                    "except the embedding matrices.",
+        "except the embedding matrices.",
     )
 
     layer_norm_eps: float = schema_utils.NonNegativeFloat(
@@ -2021,7 +2021,7 @@ class FlauBERTConfig(schema_utils.BaseMarshmallowConfig):
     is_encoder: bool = schema_utils.Boolean(
         default=True,
         description="Whether or not the initialized model should be a transformer encoder or decoder as seen in "
-                    "Vaswani et al.",
+        "Vaswani et al.",
     )
 
     mask_token_id: int = schema_utils.PositiveInteger(
@@ -2032,7 +2032,7 @@ class FlauBERTConfig(schema_utils.BaseMarshmallowConfig):
     lang_id: int = schema_utils.PositiveInteger(
         default=1,
         description="The ID of the language used by the model. This parameter is used when generating text in a given "
-                    "language.",
+        "language.",
     )
 
     pretrained_kwargs: dict = schema_utils.Dict(
@@ -2082,7 +2082,7 @@ class ELECTRAConfig(schema_utils.BaseMarshmallowConfig):
     vocab_size: int = schema_utils.PositiveInteger(
         default=30522,
         description="Vocabulary size of the ELECTRA model. Defines the number of different tokens that can be "
-                    "represented by the inputs_ids passed when calling ElectraModel or TFElectraModel.",
+        "represented by the inputs_ids passed when calling ElectraModel or TFElectraModel.",
     )
 
     embedding_size: int = schema_utils.PositiveInteger(
@@ -2133,7 +2133,7 @@ class ELECTRAConfig(schema_utils.BaseMarshmallowConfig):
     max_position_embeddings: int = schema_utils.PositiveInteger(
         default=512,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
-                    "something large just in case (e.g., 512 or 1024 or 2048).",
+        "something large just in case (e.g., 512 or 1024 or 2048).",
     )
 
     type_vocab_size: int = schema_utils.PositiveInteger(
@@ -2191,14 +2191,14 @@ class LongformerConfig(schema_utils.BaseMarshmallowConfig):
     attention_window: Union[List[int], int] = schema_utils.IntegerOrSequenceOfIntegers(
         default=512,
         description="Size of an attention window around each token. If an int, use the same size for all layers. To "
-                    "specify a different window size for each layer, use a List[int] where len(attention_window) == "
-                    "num_hidden_layers.",
+        "specify a different window size for each layer, use a List[int] where len(attention_window) == "
+        "num_hidden_layers.",
     )
 
     sep_token_id: int = schema_utils.PositiveInteger(
         default=2,
         description="ID of the separator token, which is used when building a sequence from multiple sequences",
-        )
+    )
 
     pretrained_model_name_or_path: str = schema_utils.String(
         default="allenai/longformer-base-4096",
