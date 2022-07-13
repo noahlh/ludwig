@@ -2,45 +2,37 @@ from typing import Optional
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.constants import SEQUENCE
 from ludwig.decoders.registry import get_decoder_classes
-
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
 
 
 @dataclass
-class SequenceInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
+class SequenceInputFeatureConfig(BaseInputFeatureConfig):
     """
     SequenceInputFeatureConfig is a dataclass that configures the parameters used for a sequence input feature.
     """
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type='sequence'
+        feature_type=SEQUENCE
     )
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
-        feature_type='sequence',
+        feature_type=SEQUENCE,
         default='embed',
-    )
-
-    # TODO(#1673): Need some more logic here for validating against input features
-    tied: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
-                    "feature of the same type and with the same encoder parameters.",
     )
 
 
 @dataclass
-class SequenceOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
-    """
-    SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output feature.
-    """
+class SequenceOutputFeatureConfig(BaseOutputFeatureConfig):
+    """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
+    feature."""
 
     decoder: Optional[str] = schema_utils.StringOptions(
-        list(get_decoder_classes('sequence').keys()),
+        list(get_decoder_classes(SEQUENCE).keys()),
         default="generator",
         allow_none=True,
         description="Decoder to use for this sequence feature.",

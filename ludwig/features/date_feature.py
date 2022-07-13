@@ -55,9 +55,7 @@ class DateFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {"missing_value_strategy": FILL_WITH_CONST,
-                "fill_value": "",
-                "datetime_format": None}
+        return {"missing_value_strategy": FILL_WITH_CONST, "fill_value": "", "datetime_format": None}
 
     @staticmethod
     def cast_column(column, backend):
@@ -112,7 +110,7 @@ class DateFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature("date")
+@register_input_feature(DATE)
 class DateInputFeature(DateFeatureMixin, InputFeature):
     encoder = "embed"
 
