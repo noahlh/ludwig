@@ -18,7 +18,7 @@ import logging
 import os
 import sys
 from functools import partial
-from typing import List, Union, Optional
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
